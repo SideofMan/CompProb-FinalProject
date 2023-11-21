@@ -40,13 +40,23 @@ ui <- fluidPage(
                        value = 2,
                        min = 1,
                        max = 100),
-          # Input for how man EM steps to run
+          # Input for how many EM steps to run
           numericInput("n",
                        "Number of iterations of EM to run",
                        value = 50,
                        min = 1,
                        max = 100),
+          # Choose size of y axis?
+          checkboxInput("manual_y_axis", "Choose y maximum?", F),
           
+          # Input for size of y axis
+          conditionalPanel(
+            condition = "input.manual_y_axis == true",
+            numericInput("y_max",
+                         "y maximum",
+                         value = 1)
+          ),
+      
           # Input for EM step shown
           numericInput("EM_step",
                        "EM step",
@@ -239,20 +249,26 @@ server <- function(input, output, session) {
         max_final = max(y_values)
         max_y = 0.1*ceiling(10*max(max_hist, max_EM_step, max_final))
         
+        if (input$manual_y_axis){
+          y_max = input$y_max
+        } else {
+          y_max = max_y
+        }
+        
         # draw the histogram with the specified number of bins
         hist(x, breaks = bins, freq = F, col = 'darkgray', border = 'white',
              xlab = 'Data (data)', ylab = 'Density',
              main = 'Histogram and Gaussian Mixture Model EM fit',
              xlim = c(floor(min(x)), ceiling(max(x))), 
-             ylim = c(0, max_y))
+             ylim = c(0, y_max))
         if (input$initial_plot){
-          lines(x_values, y_values_initial, col = "green", lwd=20, lty=3)
+          lines(x_values, y_values_initial, col = "green", lwd=5, lty=3)
         }
         if (input$final_plot){
-          lines(x_values, y_values, col = "red", lwd=20)
+          lines(x_values, y_values, col = "red", lwd=5)
         }
         if (input$EM_step_plot){
-          lines(x_values, y_values_EM_step, col = "blue", lwd=10)
+          lines(x_values, y_values_EM_step, col = "blue", lwd=5)
         }
         if (input$legend){
           legend(x = "topright", 
