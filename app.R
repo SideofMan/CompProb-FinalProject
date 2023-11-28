@@ -84,13 +84,16 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
+    #### Observe ####
     observe({
+      if(is.null(input$n) || is.na(input$n)){n = 50}else{n=input$n} #Prevents Crash
         # make the max EM_step the number of iterations
-        updateNumericInput(session, "EM_step", max = input$n)
+        updateNumericInput(session, "EM_step", max = n)
         
         # make sure maxes are not exceeded
-        if (input$EM_step > input$n){
-          updateNumericInput(session, "EM_step", value = input$n)
+        if(is.null(input$EM_step) || is.na(input$EM_step)){EM = 1}else{EM=input$EM_step} #Prevents Crash
+        if (EM > n){
+          updateNumericInput(session, "EM_step", value = n)
         } 
       })
   
@@ -102,8 +105,9 @@ server <- function(input, output, session) {
       # actually read the file
       read.csv(file = input$file$datapath)
     })
-    
+    #### EM Function ####
     EM_function <- function(X, m, n = input$n){
+       if(is.null(n) || missing(n) || is.na(n)) n = 50  #Prevents Crash
       # performs the Expectation-maximization algorithm on data X
       # with m mixing components, and n = 50 iterations at most
       
@@ -270,10 +274,22 @@ server <- function(input, output, session) {
         if (input$EM_step_plot){
           lines(x_values, y_values_EM_step, col = "blue", lwd=5)
         }
-        if (input$legend){
+        legend_elements <- list(
+          initial = list(label = "initial guesstimate", color = "green", type = 3),
+          final = list(label = "final guesstimate", color = "red", type = 1),
+          EM_step = list(label = sprintf("EM step %d guesstimate", EM_step), color = "blue", type = 1)
+        )
+        active_elements <- legend_elements[c(input$initial_plot, input$final_plot, input$EM_step_plot)]
+
+        # Construct and display the legend
+        if (input$legend && length(active_elements) > 0) {
+          legend_labels <- sapply(active_elements, `[[`, "label")
+          legend_colors <- sapply(active_elements, `[[`, "color")
+          legend_types <- sapply(active_elements, `[[`, "type")
           legend(x = "topright", 
-               lty = c(3,1,1), col = c("green", "red", "blue"),
-               legend = c("initial guesstimate", "final guesstimate", sprintf("EM step %d guesstimate", EM_step)))
+                lty = legend_types, 
+                col = legend_colors,
+                legend = legend_labels)
         }
         
     })
