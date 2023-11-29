@@ -68,7 +68,7 @@ ui <- fluidPage(
           checkboxInput("initial_plot", "Initial guesstimation plot", F),
           checkboxInput("final_plot", "Final EM algorithm output plot", T),
           checkboxInput("EM_step_plot", "Your EM step plot", T),
-          checkboxInput("legend", "Show the legend??????", T),
+          checkboxInput("legend", "Show the legend", T),
           
           width = 5
         ),
