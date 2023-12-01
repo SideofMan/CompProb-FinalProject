@@ -212,6 +212,11 @@ server <- function(input, output, session) {
         
         EM_fit = EM_function(x, m)
         theta = EM_fit
+        if (m == 1){
+          theta$pi = matrix(theta$pi, ncol = 1)
+          theta$mu = matrix(theta$mu, ncol = 1)
+          theta$sigma = matrix(theta$sigma, ncol = 1)
+        }
         final=nrow(theta$pi)
         
         observe({
