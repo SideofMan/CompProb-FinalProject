@@ -76,7 +76,10 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
           tabsetPanel(
-            tabPanel("Plot", plotOutput("distPlot", width = "600px"))
+            tabPanel("Plot", plotOutput("distPlot", width = "600px")),
+            tabPanel("AIC/BIC", plotOutput("AIC_BIC_Plot", width = "600px")),
+            tabPanel("Data", tableOutput("contents")),
+            tabPanel("Summary", tableOutput("summary"))
           ), width = 5
         )
     )
@@ -105,6 +108,14 @@ server <- function(input, output, session) {
       # actually read the file
       read.csv(file = input$file$datapath)
     })
+    
+    output$contents <- renderTable({
+      req(input$file)
+      
+      df <- read.csv(input$file$datapath, sep = ",",)
+      return(df)
+    })
+    
     #### EM Function ####
     EM_function <- function(X, m, n = input$n){
        if(is.null(n) || missing(n) || is.na(n)) n = 50  #Prevents Crash
@@ -298,7 +309,93 @@ server <- function(input, output, session) {
         }
         
     })
-
+    
+    #not super optimal but have to re-run em to get it to update to action on sidebar
+    output$summary <- renderTable({
+      if (is.null(input$file)) {
+        return("")
+      }
+      
+      # generate bins based on input$bins from ui.R
+      user_column = input$column
+      if (user_column < 1){
+        column = 1
+      } else {
+        max_column = ncol(input_file())
+        column = min(floor(user_column), max_column)
+      }
+      
+      x    <- input_file()[,column]
+      m = round(input$components)
+      
+      EM_fit = EM_function(x, m)
+      theta = EM_fit
+      return(data.frame(theta))
+    })
+    
+    output$AIC_BIC_Plot <- renderPlot({
+      #just copy and pasted for now i will move everything to a function once its all working clean it up
+      
+      if (is.null(input$file)) {
+        return("")
+      }
+      
+      # generate bins based on input$bins from ui.R
+      user_column = input$column
+      if (user_column < 1){
+        column = 1
+      } else {
+        max_column = ncol(input_file())
+        column = min(floor(user_column), max_column)
+      }
+      x    <- input_file()[,column]
+      bins <- seq(min(x), max(x), length.out = input$bins + 1)
+      
+      modes = 1:10
+      a = c()
+      b = c()
+      for(m in modes) {
+      
+        EM_fit = EM_function(x, m)
+        theta = EM_fit
+        if (m == 1){
+          theta$pi = matrix(theta$pi, ncol = 1)
+          theta$mu = matrix(theta$mu, ncol = 1)
+          theta$sigma = matrix(theta$sigma, ncol = 1)
+        }
+        final=nrow(theta$pi)
+        
+        x_values = seq(min(x),max(x),by=0.05)
+        y_values = matrix(0, length(x_values), m)
+        
+        # initial guesstimate
+        for (j in 1:m){
+          y_values[,j] = theta$pi[1,j]*dnorm(x_values, mean = theta$mu[1,j], sd = theta$sigma[1,j])
+        }
+        y_values_initial = rowSums(y_values)
+        
+        # output at user defined step
+        EM_step=round(m) #This changed for AIC it doesnt make a difference in the plot but keeps it from crashing if changed 
+        for (j in 1:m){
+          y_values[,j] = theta$pi[EM_step,j]*dnorm(x_values, mean = theta$mu[EM_step,j], sd = theta$sigma[EM_step,j])
+        }
+        y_values_EM_step = rowSums(y_values)
+        
+        # final output
+        final=nrow(theta$pi)
+        for (j in 1:m){
+          y_values[,j] = theta$pi[final,j]*dnorm(x_values, mean = theta$mu[final,j], sd = theta$sigma[final,j])
+        }
+        y_values = rowSums(y_values)
+        #calculate AIC and BIC
+        summedValues = sum(log(y_values))
+        a = c(a, 2 * m - 2 * summedValues)
+        b = c(b, m * log(input$n) - 2 * summedValues)
+      }
+      plot(b, type = 'b', col = "red", xlab = "Modes", ylab = "AIC/BIC")
+      points(a, type = 'b', col = "blue")
+      legend(8,840,legend=c("AIC","BIC"), fill = c("blue","red") )
+    })
 }
 
 # Run the application 
