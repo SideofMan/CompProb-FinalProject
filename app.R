@@ -152,9 +152,9 @@ server <- function(input, output, session) {
         }
         
         if (iter == 1){
-          LogLikelihood = c(log(sum(p[iter,])))
+          LogLikelihood = c(sum(log(rowSums(p))))
         } else {
-          LogLikelihood = c(LogLikelihood, log(sum(p[iter,])))
+          LogLikelihood = c(LogLikelihood, sum(log(rowSums(p))))
         }
         
         p.hat = t(apply(p, 1, function(x){x/sum(x)}))
