@@ -34,11 +34,15 @@ EM_function <- function(X, m, n = 50){
     theta$mu[iter+1,]=new_mu
     theta$sigma[iter+1,]=new_sigma
     
-    # LogLikelihood = c(LogLikelihood,log(mixture_density(X,theta)))
+    if (iter == 1){
+      LogLikelihood = c(sum(log(rowSums(p))))
+    } else {
+      LogLikelihood = c(LogLikelihood, sum(log(rowSums(p))))
+    }
     
-    # if (iter > 1 & abs((LogLikelihood[iter+1] - LogLikelihood[iter])/LogLikelihood[iter]) < 1e-5){
-    #   break
-    # }
+    if (iter > 1 & abs((LogLikelihood[iter+1] - LogLikelihood[iter])/LogLikelihood[iter]) < 1e-5){
+      break
+    }
     
     iter = iter + 1
   }

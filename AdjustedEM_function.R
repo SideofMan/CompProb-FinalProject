@@ -36,9 +36,9 @@
       
       #Calculate Log Likelihood
       if (iter == 1){#Init
-        LogLikelihood = c(log(sum(p[iter,])))
+        LogLikelihood = c(sum(log(rowSums(p))))
       } else { 
-        LogLikelihood = c(LogLikelihood, log(sum(p[iter,])))
+        LogLikelihood = c(LogLikelihood, sum(log(rowSums(p))))
         if(abs((LogLikelihood[iter] - LogLikelihood[iter-1])/LogLikelihood[iter-1]) < 1e-5){ #End condition
           theta <- lapply(theta, function(x) x[1:(iter + 1), ])
           break
