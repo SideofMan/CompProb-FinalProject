@@ -146,7 +146,7 @@ server <- function(input, output, session) {
       mu[1,] = tempmu
       sigma[1,] = tempsigma
       
-      theta = list(pi = pi, mu = mu, sigma = sigma)
+      theta = list(pi = pi, mu = mu, sigma = sigma, L = 0)
       
       iter = 1
       while (iter < n){
@@ -167,6 +167,7 @@ server <- function(input, output, session) {
         } else {
           LogLikelihood = c(LogLikelihood, sum(log(rowSums(p))))
         }
+        theta$L = LogLikelihood[length(LogLikelihood)]
         
         p.hat = t(apply(p, 1, function(x){x/sum(x)}))
         if (m == 1){p.hat = t(p.hat)} # R doesn't like mathematicians
@@ -330,7 +331,8 @@ server <- function(input, output, session) {
       
       EM_fit = EM_function(x, m)
       theta = EM_fit
-      return(data.frame(theta))
+      s = data.frame(theta); s = s[,-ncol(s)]; s = cbind(iteration = 1:nrow(s), s)
+      return(s)
     })
     
     output$AIC_BIC_Plot <- renderPlot({
@@ -357,44 +359,25 @@ server <- function(input, output, session) {
       for(m in modes) {
       
         EM_fit = EM_function(x, m)
-        theta = EM_fit
-        if (m == 1){
-          theta$pi = matrix(theta$pi, ncol = 1)
-          theta$mu = matrix(theta$mu, ncol = 1)
-          theta$sigma = matrix(theta$sigma, ncol = 1)
-        }
-        final=nrow(theta$pi)
         
-        x_values = seq(min(x),max(x),by=0.05)
-        y_values = matrix(0, length(x_values), m)
+        L = EM_fit$L # log likelihood
         
-        # initial guesstimate
-        for (j in 1:m){
-          y_values[,j] = theta$pi[1,j]*dnorm(x_values, mean = theta$mu[1,j], sd = theta$sigma[1,j])
-        }
-        y_values_initial = rowSums(y_values)
+        k = m*2+m-1 # 2 parameters per component plus m-1 weights
+        N = length(x)
         
-        # output at user defined step
-        EM_step=round(m) #This changed for AIC it doesnt make a difference in the plot but keeps it from crashing if changed 
-        for (j in 1:m){
-          y_values[,j] = theta$pi[EM_step,j]*dnorm(x_values, mean = theta$mu[EM_step,j], sd = theta$sigma[EM_step,j])
-        }
-        y_values_EM_step = rowSums(y_values)
+        AIC = function(k,L,N) -2*L + 2*k + (2*k*(k+1))/(N-k-1)
+        BIC = function(k,L,N) -2*L + k*log(N)
         
-        # final output
-        final=nrow(theta$pi)
-        for (j in 1:m){
-          y_values[,j] = theta$pi[final,j]*dnorm(x_values, mean = theta$mu[final,j], sd = theta$sigma[final,j])
-        }
-        y_values = rowSums(y_values)
-        #calculate AIC and BIC
-        summedValues = sum(log(y_values))
-        a = c(a, 2 * m - 2 * summedValues)
-        b = c(b, m * log(input$n) - 2 * summedValues)
+        a = c(a, AIC(k,L,N))
+        b = c(b, BIC(k,L,N))
       }
-      plot(b, type = 'b', col = "red", xlab = "Modes", ylab = "AIC/BIC")
+      plot(b, type = 'b', col = "red", xlab = "Modes", ylab = "AIC/BIC",
+           ylim = c(50*floor(min(c(a,b))/50),50*ceiling((max(c(a,b)/50)))))
       points(a, type = 'b', col = "blue")
-      legend(8,840,legend=c("AIC","BIC"), fill = c("blue","red") )
+      axis(1, at = seq(1,10,by=1))
+      abline(v=which.min(a), lty = 'dashed')
+      legend("topleft",legend=c("AIC","BIC"), fill = c("blue","red") )
+      title("Information Criterion")
     })
 }
 
