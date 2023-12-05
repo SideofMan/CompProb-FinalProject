@@ -297,7 +297,8 @@ server <- function(input, output, session) {
           EM_step = list(label = sprintf("EM step %d guesstimate", EM_step), color = "blue", type = 1)
         )
         active_elements <- legend_elements[c(input$initial_plot, input$final_plot, input$EM_step_plot)]
-
+        # abline(v = c(17,27,63,70,91))
+        # abline(v = 34, col = "orange")
         # Construct and display the legend
         if (input$legend && length(active_elements) > 0) {
           legend_labels <- sapply(active_elements, `[[`, "label")
