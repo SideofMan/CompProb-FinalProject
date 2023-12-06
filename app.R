@@ -366,7 +366,7 @@ server <- function(input, output, session) {
         k = m*2+m-1 # 2 parameters per component plus m-1 weights
         N = length(x)
         
-        AIC = function(k,L,N) -2*L + 2*k + (2*k*(k+1))/(N-k-1)
+        AIC = function(k,L,N) -2*L + 2*k
         BIC = function(k,L,N) -2*L + k*log(N)
         
         a = c(a, AIC(k,L,N))
