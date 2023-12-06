@@ -1,4 +1,4 @@
-EM_function <- function(X, m, n = 50){
+EM_function <- function(X, m, n = input$n){
   if(is.null(n) || missing(n) || is.na(n)) n = 50  #Prevents Crash
   # performs the Expectation-maximization algorithm on data X
   # with m mixing components, and n = 50 iterations at most
@@ -27,7 +27,7 @@ EM_function <- function(X, m, n = 50){
   mu[1,] = tempmu
   sigma[1,] = tempsigma
   
-  theta = list(pi = pi, mu = mu, sigma = sigma)
+  theta = list(pi = pi, mu = mu, sigma = sigma, L = 0)
   
   iter = 1
   while (iter < n){
@@ -48,6 +48,7 @@ EM_function <- function(X, m, n = 50){
     } else {
       LogLikelihood = c(LogLikelihood, sum(log(rowSums(p))))
     }
+    theta$L = LogLikelihood[length(LogLikelihood)]
     
     p.hat = t(apply(p, 1, function(x){x/sum(x)}))
     if (m == 1){p.hat = t(p.hat)} # R doesn't like mathematicians
